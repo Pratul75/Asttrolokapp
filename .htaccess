@@ -1,112 +1,15 @@
 <IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
-
     RewriteEngine On
-    RewriteCond %{HTTP:X-Forwarded-Proto} !https
-    RewriteCond %{HTTPS} off
-	RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-	
 
-	
-
-    # RewriteMap lowercase int:tolower
-    # RewriteCond %{REQUEST_URI} [A-Z]
-    # RewriteRule (.*) ${lowercase:$1} [R=301,L]
-    RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(.*)$ /public/$1 [L,QSA]
-    RewriteRule ^ %1 [L,R=301]
+    # Allow access to deploy.php (Ensure it's not getting redirected)
+    RewriteRule ^deploy$ /public/deploy.php [L]
 </IfModule>
-<FilesMatch "(\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|swp)|~)$">
-  Order allow,deny
-  Deny from all
-  Satisfy All
-</FilesMatch>
-
- <IfModule mod_filter.c>
-    AddOutputFilterByType DEFLATE application/atom+xml \
-                                  application/javascript \
-                                  application/json \
-                                  application/rss+xml \
-                                  application/vnd.ms-fontobject \
-                                  application/x-font-ttf \
-                                  application/xhtml+xml \
-                                  application/xml \
-                                  font/opentype \
-                                  image/svg+xml \
-                                  image/x-icon \
-                                  text/css \
-                                  text/html \
-                                  text/plain \
-                                  text/x-component \
-                                  text/xml
-  </IfModule>
-# BEGIN cPanel-generated php ini directives, do not edit
-# Manual editing of this file may result in unexpected behavior.
-# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
-# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
-<IfModule php7_module>
-   php_flag display_errors Off
-   php_value max_execution_time 3600
-   php_value max_input_time 3600
-   php_value max_input_vars 1000
-   php_value memory_limit 5000M
-   php_value post_max_size 5000M
-   php_value session.gc_maxlifetime 3600
-   php_value session.save_path "/var/cpanel/php/sessions/ea-php74"
-   php_value upload_max_filesize 5000M
-   php_flag zlib.output_compression Off
-</IfModule>
-<IfModule lsapi_module>
-   php_flag display_errors Off
-   php_value max_execution_time 3600
-   php_value max_input_time 3600
-   php_value max_input_vars 1000
-   php_value memory_limit 5000M
-   php_value post_max_size 5000M
-   php_value session.gc_maxlifetime 3600
-   php_value session.save_path "/var/cpanel/php/sessions/ea-php74"
-   php_value upload_max_filesize 5000M
-   php_flag zlib.output_compression Off
-</IfModule>
-# END cPanel-generated php ini directives, do not edit
 
 # BEGIN cPanel-generated php ini directives, do not edit
 # Manual editing of this file may result in unexpected behavior.
 # To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
 # For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
-<IfModule php7_module>
-   php_flag display_errors Off
-   php_value max_execution_time 3600
-   php_value max_input_time 3600
-   php_value max_input_vars 1000
-   php_value memory_limit 5000M
-   php_value post_max_size 5000M
-   php_value session.gc_maxlifetime 3600
-   php_value session.save_path "/var/cpanel/php/sessions/ea-php74"
-   php_value upload_max_filesize 5000M
-   php_flag zlib.output_compression Off
-</IfModule>
-<IfModule lsapi_module>
-   php_flag display_errors Off
-   php_value max_execution_time 3600
-   php_value max_input_time 3600
-   php_value max_input_vars 1000
-   php_value memory_limit 5000M
-   php_value post_max_size 5000M
-   php_value session.gc_maxlifetime 3600
-   php_value session.save_path "/var/cpanel/php/sessions/ea-php74"
-   php_value upload_max_filesize 5000M
-   php_flag zlib.output_compression Off
-</IfModule>
-# END cPanel-generated php ini directives, do not edit
-
-# BEGIN cPanel-generated php ini directives, do not edit
-# Manual editing of this file may result in unexpected behavior.
-# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
-# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
-<IfModule php7_module>
+<IfModule php8_module>
    php_flag display_errors Off
    php_value max_execution_time 3600
    php_value max_input_time 3600
@@ -114,7 +17,7 @@
    php_value memory_limit 5000M
    php_value post_max_size 50000M
    php_value session.gc_maxlifetime 3600
-   php_value session.save_path "/var/cpanel/php/sessions/ea-php74"
+   php_value session.save_path "/var/cpanel/php/sessions/ea-php81"
    php_value upload_max_filesize 50000M
    php_flag zlib.output_compression Off
 </IfModule>
@@ -126,48 +29,8 @@
    php_value memory_limit 5000M
    php_value post_max_size 50000M
    php_value session.gc_maxlifetime 3600
-   php_value session.save_path "/var/cpanel/php/sessions/ea-php74"
+   php_value session.save_path "/var/cpanel/php/sessions/ea-php81"
    php_value upload_max_filesize 50000M
    php_flag zlib.output_compression Off
 </IfModule>
 # END cPanel-generated php ini directives, do not edit
-
-#Optimize Browser Caching for Faster Website Load Times
-ExpiresActive On
-ExpiresDefault "access plus 1 month"
-# Cache CSS, JavaScript, and HTML files for 1 week
-ExpiresByType text/css "access plus 1 week"
-ExpiresByType application/javascript "access plus 1 week"
-ExpiresByType text/html "access plus 1 week"
-# Cache image files for 1 month
-ExpiresByType image/jpeg "access plus 1 month"
-ExpiresByType image/png "access plus 1 month"
-ExpiresByType image/gif "access plus 1 month"
-ExpiresByType image/svg+xml "access plus 1 month"
-# Cache video and audio files for 1 year
-ExpiresByType video/mp4 "access plus 1 year"
-ExpiresByType video/ogg "access plus 1 year"
-ExpiresByType audio/ogg "access plus 1 year"
-# Cache web fonts for 1 year
-ExpiresByType application/font-woff "access plus 1 year"
-ExpiresByType application/font-woff2 "access plus 1 year"
-ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
-ExpiresByType application/x-font-ttf "access plus 1 year"
-ExpiresByType font/opentype "access plus 1 year"
-# Cache various other file types
-ExpiresByType application/pdf "access plus 1 month"
-ExpiresByType application/x-shockwave-flash "access plus 1 month"
-ExpiresByType application/x-web-app-manifest+json "access plus 1 month"
-ExpiresByType text/cache-manifest "access plus 1 month"
-ExpiresByType application/xml "access plus 1 week"
-ExpiresByType text/xml "access plus 1 week"
-ExpiresByType application/atom+xml "access plus 1 week"
-ExpiresByType application/rss+xml "access plus 1 week"
-#End of Browser Caching
-
-# php -- BEGIN cPanel-generated handler, do not edit
-# Set the “ea-php74” package as the default “PHP” programming language.
-<IfModule mime_module>
-  AddHandler application/x-httpd-ea-php74 .php .php7 .phtml
-</IfModule>
-# php -- END cPanel-generated handler, do not edit
