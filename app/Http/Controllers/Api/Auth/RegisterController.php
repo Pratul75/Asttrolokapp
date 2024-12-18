@@ -10,6 +10,7 @@ use App\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
 {
@@ -54,7 +55,7 @@ class RegisterController extends Controller
             //   $username => ($username == 'mobile') ? 'required|numeric|unique:users' : 'required|string|email|max:255|unique:users',
             $username => ($username == 'mobile') ? 'required|numeric' : 'required|string|email|max:255',
             'password' => 'required|string|min:6|confirmed',
-            'password_confirmation' => 'required|same:password',
+            // 'password_confirmation' => 'required|same:password',
         ];
 
         validateParam($data, $rules);
@@ -164,6 +165,53 @@ class RegisterController extends Controller
         }
 
         return $this->username ?? '';
+    }
+    
+    public function Register(Request $request)
+     {
+        // $registerMethod = getGeneralSettings('register_method') ?? 'mobile';
+        $data = $request->all();
+    
+        $validator = Validator::make($request->all(), [
+            'full_name' => 'required',
+            'mobile' => 'required|numeric|unique:users',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+            'password_confirmation' => 'required|same:password',
+        ]);
+          
+        if ($validator->fails()) {
+            return response()->json(['success'=>false,'message'=>"Validation error",'error' => $validator->errors()], 400);
+        }
+       
+       
+        // $userCase = User::where('email', $data['email'])->first();
+        $userCase = User::whereRaw("RIGHT(mobile, 10) = ?", [$data['mobile']])->exists();
+       
+        if ($userCase) {
+          return apiResponse2(0, 'already_registered', 'The mobile has already been taken.');
+            
+        }
+        $referralSettings = getReferralSettings();
+        $usersAffiliateStatus = (!empty($referralSettings) and !empty($referralSettings['users_affiliate_status']));
+
+        $user = User::create([
+            'role_name' => Role::$user,
+            'role_id' => Role::getUserRoleId(),
+            'full_name' => $data['full_name'],
+            'email' => $data['email'],
+            'mobile' => $data['mobile'],
+            'status' => User::$pending,
+            'password' => Hash::make($data['password']),
+            'affiliate' => $usersAffiliateStatus,
+            'created_at' => time()
+        ]);
+
+        $verificationController = new VerificationController();
+        $verificationController->checkConfirmed($user, 'email', $data['email']);
+
+
+        return apiResponse2('1', 'stored', 'Register successfully');
     }
 
 

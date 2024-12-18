@@ -67,37 +67,37 @@ class SearchController extends Controller
         }
         $data = [
             
-            'webinars' =>
-        [ 'webinars'=>$webinars ,
-           'count'=>count($webinars)
+            'webinars' =>$webinars ,
+        // [ 'webinars'=>$webinars ,
+        //   'count'=>count($webinars)
         
-        ]
-        ,
+        // ]
+        // ,
 
-        'users' =>
-        [ 'users'=>$users ,
-           'count'=>count($users)
+        'users' =>$users ,
+        // [ 'users'=>$users ,
+        //   'count'=>count($users)
         
-        ]
-        ,
+        // ]
+        // ,
 
-        'teachers' =>
-        [ 'teachers'=>$teachers ,
-           'count'=>count($teachers)
+        'teachers' =>$teachers ,
+        // [ 'teachers'=>$teachers ,
+        //   'count'=>count($teachers)
         
-        ]
-        ,
+        // ]
+        // ,
 
-        'organizations' =>
-        [ 'organizations'=>$organizations ,
-           'count'=>count($organizations)
-        ]
-        ,
+        'organizations' =>$organizations ,
+        // [ 'organizations'=>$organizations ,
+        //   'count'=>count($organizations)
+        // ]
+        // ,
         
         
         ];
 
-        return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), $data);
+        return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), [$data]);
 
     }
 

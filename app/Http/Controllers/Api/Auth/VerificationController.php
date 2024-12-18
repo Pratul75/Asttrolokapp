@@ -64,7 +64,8 @@ class VerificationController extends Controller
             }
 
             return [
-                'status' => 'send'
+                'status' => 'send',
+                'code'=>$verification
             ];
         }
 
@@ -77,8 +78,8 @@ class VerificationController extends Controller
 
         $value = $username;
         if (!$username) {
-            $value = $request->input('username');
-            $username = $request->input('username');
+            $value = $request->input('mobile');
+            $username = $request->input('mobile');
         }
         $code = $request->get('code');
         $username = $this->username($value);
@@ -91,7 +92,7 @@ class VerificationController extends Controller
             ->where('created_at', '>', $time - 24 * 60 * 60)
             ->update([
                 'verified_at' => $time,
-                'expired_at' => $time + 50,
+                'expired_at' => $time + 1,
             ]);
 
         $rules = [
@@ -130,10 +131,17 @@ class VerificationController extends Controller
                 $authUser->update([
                     'status' => User::$active,
                 ]);
-                return apiResponse2(1, 'verified', trans('api.auth.verified'));
+                // Auth::login($user);
+                
+                 if ($username == 'mobile') {
+                   return $loginController->loginApp($request);
+                 }
+                 return apiResponse2(1, 'verified', trans('api.auth.verified'));
             }
 
-           // return $loginController->sendFailedLoginResponse($request);
+            if ($username == 'mobile') {
+                return $loginController->loginApp($request);
+                 }
         }
 
     }
@@ -153,6 +161,6 @@ class VerificationController extends Controller
 
     private function getNewCode()
     {
-        return rand(10000, 99999);
+        return rand(1000, 9999);
     }
 }

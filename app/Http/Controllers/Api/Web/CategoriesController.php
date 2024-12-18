@@ -51,24 +51,25 @@ class CategoriesController extends Controller
 
             return $webinar->brief ;
         }) ;
+     return apiResponse2(1, 'retrieved', trans('api.public.retrieved'),$webinars);
 
+        // return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), [
+        //     'filters' => $category->filters->map(function ($filter) {
+        //         return [
+        //             'id' => $filter->id,
+        //             'title' => $filter->title,
+        //             'options' => $filter->options->map(function ($option) {
+        //                 return [
+        //                     'id' => $option->id,
+        //                     'title' => $option->title,
+        //                     'order' => $option->order,
+        //                 ];
+        //             }),
+        //         ];
+        //     }),
+        //     'webinars' => $webinars
+        // ]);
 
-        return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), [
-            'filters' => $category->filters->map(function ($filter) {
-                return [
-                    'id' => $filter->id,
-                    'title' => $filter->title,
-                    'options' => $filter->options->map(function ($option) {
-                        return [
-                            'id' => $option->id,
-                            'title' => $option->title,
-                            'order' => $option->order,
-                        ];
-                    }),
-                ];
-            }),
-            'webinars' => $webinars
-        ]);
 
 
     }

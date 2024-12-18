@@ -77,7 +77,7 @@ trait ReviewTrait
         ]);
 
         return apiResponse2(1, 'stored',
-            trans('webinars.your_reviews_successfully_submitted_and_waiting_for_admin'),
+            trans('webinars.your_reviews_successfully_submitted_and_waiting_for_admin')
 
         );
 

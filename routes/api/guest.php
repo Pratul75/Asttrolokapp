@@ -2,8 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::group([], function () {
-
+// Route::group([], function () {
+Route::group(['middleware' => ['api.auth']], function () {
     Route::group(['prefix' => 'courses'], function () {
 
         Route::get('/', ['uses' => 'WebinarController@index']);
@@ -42,6 +42,7 @@ Route::group([], function () {
     /******  Meetings ******/
     Route::post('meetings/reserve', ['uses' => 'MeetingsController@reserve', 'middleware' => ['api.auth', 'api.request.type']]);
     Route::get('users/{id}/meetings', ['uses' => 'UserController@availableTimes']);
+    Route::get('users/{id}/ReservedSlot', ['uses' => 'UserController@ReservedSlot']);
 
 
     Route::get('users/{id}/profile', ['uses' => 'UserController@profile']);
@@ -62,6 +63,8 @@ Route::group([], function () {
     Route::get('/subscribe', ['uses' => 'SubscribesController@list']);
 
     Route::get('instructors', ['uses' => 'UserController@instructors']);
+    Route::get('profile/{id}', ['uses' => 'UserController@profile']);
+    Route::get('mayank', ['uses' => 'UserController@mayank']);
     Route::get('organizations', ['uses' => 'UserController@organizations']);
 
     Route::post('newsletter', ['uses' => 'UserController@makeNewsletter', 'middleware' => 'format']);
@@ -91,7 +94,12 @@ Route::group([], function () {
         Route::get('/{id}', ['uses' => 'ProductController@show']);
 
     });
+    
+     Route::group(['prefix' => 'waitlists'], function () {
+        Route::post('/join', 'WaitlistController@store');
+    });
     Route::get('/product_categories', ['uses' => 'ProductCategoryController@index']);
+     
 
 });
 

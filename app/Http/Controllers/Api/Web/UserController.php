@@ -31,7 +31,7 @@ class UserController extends Controller
             abort(404);
         }
         return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), [
-            'user' => $user->details
+            'user' => $user
         ]);
 
     }
@@ -41,6 +41,13 @@ class UserController extends Controller
         $providers = $this->handleProviders($request, [Role::$teacher]);
 
         return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), $providers);
+
+    }
+    public function mayank(Request $request)
+    {
+      
+
+        return apiResponse2(1, 'mayank', trans('api.public.retrieved'), ['name' => 'mayank']);
 
     }
 
@@ -323,47 +330,47 @@ class UserController extends Controller
             foreach ($meeting->meetingTimes->groupBy('day_label') as $day => $meetingTime) {
 
                 foreach ($meetingTime as $time) {
-                    $can_reserve = true;
+                    // $can_reserve = true;
 
                  $explodetime = explode('-', $time->time);
 
                      $secondTime = dateTimeFormat(strtotime($explodetime['0']), 'H') * 3600 + dateTimeFormat(strtotime($explodetime['0']), 'i') * 60;
 
-                    $reserveMeeting = ReserveMeeting::where('meeting_time_id', $time->id)
-                        ->where('day', dateTimeFormat($timestamp, 'Y-m-d'))
-                        ->where('meeting_time_id', $time->id)
-                        ->first();
+                    // $reserveMeeting = ReserveMeeting::where('meeting_time_id', $time->id)
+                    //     ->where('day', dateTimeFormat($timestamp, 'Y-m-d'))
+                    //     ->where('meeting_time_id', $time->id)
+                    //     ->first();
 
-                    if ($reserveMeeting && ($reserveMeeting->locked_at || $reserveMeeting->reserved_at)) {
-                        $can_reserve = false;
-                    }
+                    // if ($reserveMeeting && ($reserveMeeting->locked_at || $reserveMeeting->reserved_at)) {
+                    //     $can_reserve = false;
+                    // }
 
-                        if ($timestamp + $secondTime < time()) {
-                           $can_reserve = false;
-                       }
+                    //     if ($timestamp + $secondTime < time()) {
+                    //       $can_reserve = false;
+                    //   }
                     // $time_explode = explode('-', $time->time);
                     // Carbon::parse($time_explode[0]);
 
-                    $user = apiAuth();
-                    $userReservedMeeting = null;
-                    if ($user) {
-                        $userReservedMeeting = ReserveMeeting::where('user_id', $user->id)
-                            ->where('meeting_id', $meeting->id)->where('meeting_time_id',
-                                $time->id
-                            )
-                            ->first();
-                    }
+                    // $user = apiAuth();
+                    // $userReservedMeeting = null;
+                    // if ($user) {
+                    //     $userReservedMeeting = ReserveMeeting::where('user_id', $user->id)
+                    //         ->where('meeting_id', $meeting->id)->where('meeting_time_id',
+                    //             $time->id
+                    //         )
+                    //         ->first();
+                    // }
 
 
                     $meetingTimes[$day]["times"][] =
                         [
                             "id" => $time->id,
                             "time" => $time->time,
-                            "can_reserve" => $can_reserve,
-                            "description" => $time->description,
-                            'meeting_type'=>$time->meeting_type ,
-                            'meeting' => $time->meeting->details,
-                            'auth_reservation' => $userReservedMeeting
+                            // "can_reserve" => $can_reserve,
+                            // "description" => $time->description,
+                            // 'meeting_type'=>$time->meeting_type ,
+                            // 'meeting' => $time->meeting->details,
+                            // 'auth_reservation' => $userReservedMeeting
 
                         ];
                 }
@@ -385,6 +392,110 @@ class UserController extends Controller
             'times' => $array
         ]);
 
+    }
+    
+    public function ReservedSlot(Request $request, $id)
+    {
+        $timestamp = $request->get('timestamp');
+        $dayLabel = $request->get('day_label');
+        $date = $request->get('date');
+
+        $user = User::where('id', $id)
+            ->whereIn('role_name', [Role::$teacher, Role::$organization])
+            ->where('status', 'active')
+            ->first();
+
+        if (!$user) {
+            abort(404);
+        }
+
+        $meeting = Meeting::where('creator_id', $user->id)
+            ->with(['meetingTimes'])
+            ->first();
+
+        $resultMeetingTimes = [];
+
+        if (!empty($meeting->meetingTimes)) {
+
+            if (empty($dayLabel)) {
+                $dayLabel = dateTimeFormat($timestamp, 'l', false, false);
+            }
+
+            $dayLabel = mb_strtolower($dayLabel);
+
+            $meetingTimes = $meeting->meetingTimes()->where('day_label', $dayLabel)->get();
+
+            if (!empty($meetingTimes) and count($meetingTimes)) {
+
+                foreach ($meetingTimes as $meetingTime) {
+                    $can_reserve = true;
+
+                    $reserveMeeting = ReserveMeeting::where('meeting_time_id', $meetingTime->id)
+                        ->where('day', $date)
+                        ->whereIn('status', ['pending', 'open'])
+                        ->WhereNotNull('reserved_at')
+                        ->first();
+    if ($reserveMeeting) {
+        //      return response()->json([
+        //     'times' => $reserveMeeting
+        // ], 200);
+
+// else{
+//     $reserveMeeting = ReserveMeeting::where('meeting_time_id', $meetingTime->id)
+//                         ->where('day', $date)
+//                         ->whereIn('status', ['pending', 'open'])
+//                         ->first();
+    
+// }
+
+                    if ($reserveMeeting && ($reserveMeeting->locked_at || $reserveMeeting->reserved_at)) {
+                        $can_reserve = false;
+                    }
+
+                    /*if ($timestamp + $secondTime < time()) {
+                        $can_reserve = false;
+                    }*/
+                    
+                    // $vvv=explode('-', $meetingTime->time);
+                    // date_default_timezone_set("Asia/Kolkata");
+                    // if(strtotime(date("Y-m-d")) == strtotime($date)){
+                    // if(strtotime(date("Y-m-d h:i:sa"))>=strtotime($vvv[0])){
+                    
+                    $resultMeetingTimes[] = [
+                        "id" => $meetingTime->id,
+                        "data" => $reserveMeeting 
+                    ];
+                    // }else{
+                    //     $resultMeetingTimes[] = [
+                    //     "id" => $meetingTime->id,
+                    //     "time" => $vvv[0] ,
+                    //     "description" => $meetingTime->description,
+                    //     "can_reserve" => $can_reserve,
+                    //     'meeting_type' => $meetingTime->meeting_type
+                    // ];
+                    // }
+                    // }else{
+                    //     $resultMeetingTimes[] = [
+                    //     "id" => $meetingTime->id,
+                    //     "time" => $vvv[0] ,
+                    //     "description" => $meetingTime->description,
+                    //     "can_reserve" => $can_reserve,
+                    //     'meeting_type' => $meetingTime->meeting_type
+                    // ];
+                    // }
+                }
+                }
+            }
+        }
+
+        // return response()->json([
+        //     'times' => $resultMeetingTimes
+        // ], 200);
+        
+        return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), [
+            'count' => count($resultMeetingTimes),
+            'times' => $resultMeetingTimes
+        ]);
     }
 
 

@@ -13,9 +13,20 @@ use App\Models\Api\Session;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ZoomTokenService;
+use Illuminate\Support\Carbon;
+use Validator;
+use Illuminate\Support\Facades\Http;
 
 class SessionController extends Controller
 {
+    
+     protected $zoomService;
+
+    public function __construct(ZoomTokenService $zoomService)
+    {
+        $this->zoomService = $zoomService;
+    }
     public function show($id)
     {
         $session = Session::where('id', $id)
@@ -48,4 +59,21 @@ class SessionController extends Controller
 
         return redirect(url('panel/sessions/' . $session_id . '/joinToAgora'));
     }
+    public function getParticipants($meetingId)
+{
+    
+     $response = $this->zoomService->getParticipants($meetingId);
+    if($response){
+    $participants = $response;
+     // Process participants
+    foreach ($participants['participants'] as $participant) {
+        echo 'Name: ' . $participant['name'] . ' - Email: ' . $participant['email'] . '<br>';
+    }
+    }else{
+        return $response->body();
+    }
+
+   
+}
+
 }

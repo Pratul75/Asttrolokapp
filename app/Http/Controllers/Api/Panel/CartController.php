@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\URL;
 
 class CartController extends Controller
 {
+   
     public function index()
     {
         $user = apiAuth();
@@ -67,9 +68,7 @@ class CartController extends Controller
             }
         }
 
-        return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), [
-            'cart' => $cartt
-        ]);
+        return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), [$cartt]);
 
     }
 
@@ -296,6 +295,79 @@ class CartController extends Controller
         }
 
         $user = apiAuth();
+        $carts = Cart::where('creator_id', $user->id)
+            ->get();
+
+        if (!empty($carts) and !$carts->isEmpty()) {
+            $calculate = $this->calculatePrice($carts, $user, $discountCoupon);
+
+            $order = $this->createOrderAndOrderItems($carts, $calculate, $user, $discountCoupon);
+
+            if (!empty($order) and $order->total_amount > 0) {
+                $razorpay = false;
+                foreach ($paymentChannels as $paymentChannel) {
+                    if ($paymentChannel->class_name == 'Razorpay') {
+                        $razorpay = true;
+                    }
+                }
+
+                $data = [
+                    //      'pageTitle' => trans('public.checkout_page_title'),
+                    'paymentChannels' => $paymentChannels,
+                    'carts' => $carts->map(function ($cart) {
+                        return $cart->details;
+                    }),
+                    // 'subTotal' => $calculate["sub_total"],
+                    // 'totalDiscount' => $calculate["total_discount"],
+                    //  'tax' => $calculate["tax"],
+                    //   'taxPrice' => $calculate["tax_price"],
+                    //     'total' => $calculate["total"],
+                    'user_group' => $user->userGroup ? $user->userGroup->group : null,
+                    'order' => $order,
+                    'count' => $carts->count(),
+                    'userCharge' => $user->getAccountingCharge(),
+                    'razorpay' => $razorpay,
+                    'amounts' => $calculate,
+                ];
+
+                return apiResponse2(1, 'checkout', trans('api.cart.checkout'), $data);
+
+
+            } else {
+                return $this->handlePaymentOrderWithZeroTotalAmount($order);
+            }
+        }
+
+        return apiResponse2(0, 'empty_cart', trans('api.payment.empty_cart'));
+
+    }
+    public function buyNowcheckout(Request $request)
+    {
+
+        $discountId = $request->input('discount_id');
+
+         $name = $request->input('name');
+         $email = $request->input('email');
+         $mobile = $request->input('mobile');
+        
+
+        $paymentChannels = PaymentChannel::where('status', 'active')->get();
+
+        $discountCoupon = Discount::where('id', $discountId)->first();
+
+        if (empty($discountCoupon) or !$discountCoupon->checkValidDiscount()) {
+            $discountCoupon = null;
+        }
+
+        $user = apiAuth();
+        
+        if(!empty($name) && !empty($email)){
+            $user->full_name =$name;
+            $user->email =$email;
+            $user->save();
+            // $user->full_name =$name;
+        }
+        
         $carts = Cart::where('creator_id', $user->id)
             ->get();
 
@@ -598,6 +670,169 @@ class CartController extends Controller
         }
 
         return $fee;
+    }
+     private function handleDiscountPrice($discount, $carts, $subTotal)
+    {
+        //$user = auth()->user();
+        $user = apiAuth();
+        $percent = $discount->percent ?? 1;
+        $totalDiscount = 0;
+
+        if ($discount->source == Discount::$discountSourceCourse) {
+            $totalWebinarsAmount = 0;
+            $webinarOtherDiscounts = 0;
+            $discountWebinarsIds = $discount->discountCourses()->pluck('course_id')->toArray();
+//print_r($carts);die;
+            foreach ($carts as $cart) {
+                if(!empty($cart->webinar)){
+                    $webinar = $cart->webinar;
+                }else{
+                     $webinar=Webinar::where('id',$cart['item_id'])->first();
+                }
+               
+                
+                if (!empty($webinar) and in_array($webinar->id, $discountWebinarsIds)) {
+                    $totalWebinarsAmount += $webinar->price;
+                    //$webinarOtherDiscounts += $webinar->getDiscount($cart->ticket, $user);
+                }
+            }
+
+            if ($discount->discount_type == Discount::$discountTypeFixedAmount) {
+                $totalDiscount = ($totalWebinarsAmount > $discount->amount) ? $discount->amount : $totalWebinarsAmount;
+
+                /*if (!empty($webinarOtherDiscounts)) {
+                    $totalDiscount = $totalDiscount - (int)$webinarOtherDiscounts;
+                }*/
+            } else {
+                $totalDiscount = ($totalWebinarsAmount > 0) ? $totalWebinarsAmount * $percent / 100 : 0;
+            }
+        } elseif ($discount->source == Discount::$discountSourceBundle) {
+            $totalBundlesAmount = 0;
+            $bundleOtherDiscounts = 0;
+            $discountBundlesIds = $discount->discountBundles()->pluck('bundle_id')->toArray();
+
+            foreach ($carts as $cart) {
+                $bundle = $cart->bundle;
+                if (!empty($bundle) and in_array($bundle->id, $discountBundlesIds)) {
+                    $totalBundlesAmount += $bundle->price;
+                    //$bundleOtherDiscounts += $bundle->getDiscount($cart->ticket, $user);
+                }
+            }
+
+            if ($discount->discount_type == Discount::$discountTypeFixedAmount) {
+                $totalDiscount = ($totalBundlesAmount > $discount->amount) ? $discount->amount : $totalBundlesAmount;
+
+                /*if (!empty($bundleOtherDiscounts)) {
+                    $totalDiscount = $totalDiscount - (int)$bundleOtherDiscounts;
+                }*/
+            } else {
+                $totalDiscount = ($totalBundlesAmount > 0) ? $totalBundlesAmount * $percent / 100 : 0;
+            }
+        } elseif ($discount->source == Discount::$discountSourceProduct) {
+            $totalProductsAmount = 0;
+            $productOtherDiscounts = 0;
+
+            foreach ($carts as $cart) {
+                if (!empty($cart->productOrder)) {
+                    $product = $cart->productOrder->product;
+
+                    if (!empty($product) and ($discount->product_type == 'all' or $discount->product_type == $product->type)) {
+                        $totalProductsAmount += ($product->price * $cart->productOrder->quantity);
+                        //$productOtherDiscounts += $product->getDiscountPrice();
+                    }
+                }
+            }
+
+            if ($discount->discount_type == Discount::$discountTypeFixedAmount) {
+                $totalDiscount = ($totalProductsAmount > $discount->amount) ? $discount->amount : $totalProductsAmount;
+
+                /*if (!empty($productOtherDiscounts)) {
+                    $totalDiscount = $totalDiscount - (int)$productOtherDiscounts;
+                }*/
+            } else {
+                $totalDiscount = ($totalProductsAmount > 0) ? $totalProductsAmount * $percent / 100 : 0;
+            }
+        } elseif ($discount->source == Discount::$discountSourceMeeting) {
+            $totalMeetingAmount = 0;
+            $meetingOtherDiscounts = 0;
+
+            foreach ($carts as $cart) {
+                $reserveMeeting = $cart->reserveMeeting;
+
+                if (!empty($reserveMeeting)) {
+                    $totalMeetingAmount += $reserveMeeting->paid_amount;
+                    //$meetingOtherDiscounts += $reserveMeeting->getDiscountPrice($user);
+                }
+            }
+
+            if ($discount->discount_type == Discount::$discountTypeFixedAmount) {
+                $totalDiscount = ($totalMeetingAmount > $discount->amount) ? $discount->amount : $totalMeetingAmount;
+
+                /*if (!empty($meetingOtherDiscounts)) {
+                    $totalDiscount = $totalDiscount - $meetingOtherDiscounts;
+                }*/
+            } else {
+                $totalDiscount = ($totalMeetingAmount > 0) ? $totalMeetingAmount * $percent / 100 : 0;
+            }
+        } elseif ($discount->source == Discount::$discountSourceCategory) {
+            $totalCategoriesAmount = 0;
+            $categoriesOtherDiscounts = 0;
+
+            $categoriesIds = ($discount->discountCategories) ? $discount->discountCategories()->pluck('category_id')->toArray() : [];
+
+            foreach ($carts as $cart) {
+                $webinar = $cart->webinar;
+
+                if (!empty($webinar) and in_array($webinar->category_id, $categoriesIds)) {
+                    $totalCategoriesAmount += $webinar->price;
+                    //$categoriesOtherDiscounts += $webinar->getDiscount($cart->ticket, $user);
+                }
+            }
+
+            if ($discount->discount_type == Discount::$discountTypeFixedAmount) {
+                $totalDiscount = ($totalCategoriesAmount > $discount->amount) ? $discount->amount : $totalCategoriesAmount;
+
+                /*if (!empty($categoriesOtherDiscounts)) {
+                    $totalDiscount = $totalDiscount - $categoriesOtherDiscounts;
+                }*/
+            } else {
+                $totalDiscount = ($totalCategoriesAmount > 0) ? $totalCategoriesAmount * $percent / 100 : 0;
+            }
+        } else {
+            $totalCartAmount = 0;
+            $totalCartOtherDiscounts = 0;
+
+            foreach ($carts as $cart) {
+                $webinar = $cart->webinar;
+                $reserveMeeting = $cart->reserveMeeting;
+
+                if (!empty($webinar)) {
+                    $totalCartAmount += $webinar->price;
+                    //$totalCartOtherDiscounts += $webinar->getDiscount($cart->ticket, $user);
+                }
+
+                if (!empty($reserveMeeting)) {
+                    $totalCartAmount += $reserveMeeting->paid_amount;
+                    //$totalCartOtherDiscounts += $reserveMeeting->getDiscountPrice($user);
+                }
+            }
+
+            if ($discount->discount_type == Discount::$discountTypeFixedAmount) {
+                $totalDiscount = ($totalCartAmount > $discount->amount) ? $discount->amount : $totalCartAmount;
+
+                /*if (!empty($totalCartOtherDiscounts)) {
+                    $totalDiscount = $totalDiscount - $totalCartOtherDiscounts;
+                }*/
+            } else {
+                $totalDiscount = ($totalCartAmount > 0) ? $totalCartAmount * $percent / 100 : 0;
+            }
+        }
+
+        if ($discount->discount_type != Discount::$discountTypeFixedAmount and !empty($discount->max_amount) and $totalDiscount > $discount->max_amount) {
+            $totalDiscount = $discount->max_amount;
+        }
+
+        return $totalDiscount;
     }
 
 }

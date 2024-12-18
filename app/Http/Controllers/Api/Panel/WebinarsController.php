@@ -11,9 +11,16 @@ use App\Models\WebinarChapter;
 use App\Models\WebinarPartnerTeacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Mixins\Cashback\CashbackRules;
+use App\Mixins\Installment\InstallmentPlans;
+use App\Http\Controllers\Api\Traits\CheckContentLimitationTrait;
+use App\Http\Controllers\Api\Traits\InstallmentsTrait;
 
 class WebinarsController extends Controller
 {
+    use CheckContentLimitationTrait;
+    use InstallmentsTrait;
+    
     public function show($id)
     {
         $user = apiAuth();

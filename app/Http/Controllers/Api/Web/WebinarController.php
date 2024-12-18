@@ -37,9 +37,11 @@ class WebinarController extends Controller
             })
             ->where('private', false)
             ->handleFilters()
-            ->get()->map(function ($webinar) {
+            ->get()
+            ->map(function ($webinar) {
                 return $webinar->brief;
-            });
+            }
+            );
 
 
         return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), $webinars);
@@ -50,6 +52,17 @@ class WebinarController extends Controller
     {
         $webinarsQuery = Webinar::where('status', 'active')
             ->where('private', false)->where('id', $id);
+                $webinarExtraDescription=$webinarsQuery->with([
+                'webinarExtraDescription' => function ($query) {
+                     $query->select('webinar_id','type','id');
+                    $query->orderBy('order', 'asc');
+                //     $query->with([
+                // 'webinar_extra_description_translations' => function ($query) {
+                //      $query1->select('webinar_extra_description_id','value');
+                //     $query1->orderBy('order', 'asc');
+                //     $query1->get();
+                // }]);
+                }])->first();
 
         abort_unless($webinarsQuery->count(), 404);
 
@@ -58,7 +71,17 @@ class WebinarController extends Controller
             ->get()->map(function ($webinar) {
                 return $webinar->details;
             })->first();
-
+            $webinars['webinarExtraDescription']=$webinarExtraDescription ?? null;
+        //   print/_r($webinars['webinarExtraDescription']['webinarExtraDescription']);die;
+        //   if($webinars['webinarExtraDescription'] && $webinars['webinarExtraDescription']['webinarExtraDescription']){
+        //       foreach ($webinars['webinarExtraDescription']['webinarExtraDescription'] as $value) {
+        //           $translations = DB::table('webinar_extra_description_translations')
+        //             ->where('webinar_extra_description_id',$value->id)
+        //             ->get();
+                    
+        //             $value->webinar_extra_description_translations =$translations;
+        //       } 
+        //   }
         return apiResponse2(1, 'retrieved', trans('api.public.retrieved'), $webinars);
 
 

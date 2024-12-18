@@ -6,7 +6,12 @@ use Illuminate\Support\Facades\Route;
 Route::group(['namespace' => 'Auth', 'middleware' => ['api.request.type']], function () {
 
     Route::post('/register/step/{step}', ['as' => 'register', 'uses' => 'RegisterController@stepRegister']);
-    Route::post('/login', ['as' => 'login', 'uses' => 'LoginController@login']);
+    Route::post('/signup', ['as' => 'signup', 'uses' => 'RegisterController@Register']);
+    Route::post('/login', ['as' => 'login', 'uses' => 'LoginController@requestOtp']);
+
+
+Route::post('/getData', ['as' => 'getData', 'uses' => 'LoginController@getData']);
+Route::post('/setData', ['as' => 'setData', 'uses' => 'LoginController@setData']);
 
     Route::post('/forget-password', ['as' => 'forgot', 'uses' => 'ForgotPasswordController@sendEmail']);
     Route::post('/reset-password/{token}', ['as' => 'updatePassword', 'uses' => 'ResetPasswordController@updatePassword']);

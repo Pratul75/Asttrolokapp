@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::group([], function () {
+Route::group(['middleware' => ['api.auth']], function () {
 
     Route::get('/', function () {
         return 'test panel';
@@ -128,6 +128,26 @@ Route::group([], function () {
 
 
     });
+     Route::group(['prefix' => '/buynow'], function () {
+        Route::post('/', ['uses' => 'CartController@store']);
+        Route::post('checkout', ['uses' => 'CartController@buyNowcheckout']);
+        Route::post('web_checkout', ['uses' => 'CartController@webCheckoutGenerator']);
+
+
+    });
+    Route::group(['prefix' => '/installments'], function () {
+            Route::get('/plan', 'WebinarsController@getInstallmentsByCourse');
+            Route::get('/{id}', 'InstallmentsController@index');
+            Route::post('/store', 'InstallmentsController@store');
+
+            Route::get('/{id}/details', 'InstallmentsController@show');
+            Route::get('/{id}/cancel', 'InstallmentsController@cancelVerification');
+            Route::get('/{id}/pay_upcoming_part', 'InstallmentsController@payUpcomingPart');
+            Route::get('/{id}/steps/{step_id}/pay', 'InstallmentsController@payStep');
+
+    });
+    
+    
     Route::group(['prefix' => 'financial'], function () {
 
         Route::get('sales', ['uses' => 'SalesController@index']);
@@ -156,8 +176,8 @@ Route::group([], function () {
     Route::group(['prefix' => 'payments'], function () {
         Route::post('/request', 'PaymentsController@paymentRequest');
         Route::post('/credit', 'PaymentsController@paymentByCredit');
-        Route::get('/verify/{gateway}', ['as' => 'payment_verify', 'uses' => 'PaymentController@paymentVerify']);
-        Route::post('/verify/{gateway}', ['as' => 'payment_verify_post', 'uses' => 'PaymentController@paymentVerify']);
+        Route::get('/verify/{gateway}', ['as' => 'payment_verify', 'uses' => 'PaymentsController@paymentVerify']);
+        Route::post('/verify/{gateway}', ['as' => 'payment_verify_post', 'uses' => 'PaymentsController@paymentVerify']);
     });
     Route::group(['prefix' => 'profile-setting'], function () {
         Route::get('/', ['uses' => 'UsersController@setting']);
@@ -249,5 +269,5 @@ Route::group([], function () {
     Route::get('/text-lessons/{lesson}/navigation', ['uses' => 'WebinarTextLessonController@index']);
     Route::get('/assignments/{assignment}', ['uses' => 'WebinarAssignmentController@show'])->name('assignment.show');
     Route::get('/quizzes/{quiz}', ['uses' => 'QuizzesController@show'])->name('quiz.show');
-
+Route::get('/get-user/{meetingid}', ['uses' => 'SessionController@getParticipants']);
 });
