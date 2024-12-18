@@ -1,0 +1,41 @@
+# Laravel specific
+/vendor/
+vendor
+.env
+.phpunit.result.cache
+/.vscode/
+.idea/
+
+# Node modules
+/node_modules/
+
+# Composer
+composer.lock
+
+# Laravel Debugger
+storage
+/storage/*.key
+
+# Cache and logs
+/storage/debugbar/
+storage/framework/cache/data
+/storage/logs/*
+/storage/sessions/*
+/storage/views/*
+
+# IDE specific
+/.idea/
+/.vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Laravel Mix
+/public/hot
+/public/storage
+/public/mix-manifest.json
+*.zip
+*.gif
+storage/logs/laravel.log
+.well-known
